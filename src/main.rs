@@ -1,9 +1,19 @@
-use rodio::cpal::{self, traits::HostTrait};
+mod intruments;
 
-fn main() {
-    let host = cpal::default_host();
-    let devices = host.devices();
+#[allow(unused)]
+use intruments::*;
 
-    for device in devices {}
-    println!("Hello, world!");
+use rodio::DeviceSinkBuilder;
+use std::error::Error;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let stream_handle = DeviceSinkBuilder::open_default_sink()?;
+    let player = rodio::Player::connect_new(stream_handle.mixer());
+
+    let file = std::fs::File::open("assets/music.wav")?;
+    player.append(rodio::Decoder::try_from(file)?);
+
+    player.sleep_until_end();
+
+    Ok(())
 }
