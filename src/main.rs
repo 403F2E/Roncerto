@@ -1,8 +1,8 @@
 mod intruments;
 
-use intruments::Piano;
+use intruments::{Guitar, Instrument, Piano};
 
-use clap::{ArgMatches, Command};
+use clap::{Arg, ArgMatches, Command};
 
 use rodio::DeviceSinkBuilder;
 use std::error::Error;
@@ -14,22 +14,38 @@ fn config_arg() -> Command {
         )
         .author("403f2e")
         .version("0.1")
+        .arg(
+            Arg::new("instrument")
+                .short('i')
+                .long("instrument")
+                .value_name("INSTRUMENT")
+                .help("Choose instrument: piano or guitar")
+                .default_value("piano")
+                .value_parser(["piano", "guitar"]),
+        )
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut stream_handle = DeviceSinkBuilder::open_default_sink()?;
     stream_handle.log_on_drop(false);
+
+    // Create an Instrument (Piano/Guitar)
     let matches: ArgMatches = config_arg().get_matches();
-    let _intrument: Option<Piano> = if matches.contains_id("piano") {
+    let mut intrument: Box<dyn Instrument> = if "piano"
+        == matches
+            .get_one::<String>("instrument")
+            .map(String::as_str)
+            .unwrap_or("piano")
+    {
         // Piano initialization here
-        Some(Piano::new(stream_handle))
+        Box::new(Piano::new(stream_handle))
     } else {
         // Guitar initialization here
-        None
+        Box::new(Guitar::new(stream_handle))
     };
 
     // start the intrument
-    // intruments.run();
+    intrument.run();
 
     Ok(())
 }
